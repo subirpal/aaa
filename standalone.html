@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Bee Comparison</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    .control-panel {
+      display: flex;
+      gap: 70px;
+    flex-wrap: wrap;
+    margin-left: 190px;
+    }
+
+    .control-panel > div {
+      width: 250px;
+    }
+
+    .company-select-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .circle-box {
+      width: 80px;
+      height: 80px;
+      background: #ccc;
+      border-radius: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: #eee;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 6px;
+    }
+
+    .autocomplete-list {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #ddd;
+      z-index: 10;
+      width:300px;
+      max-height: 200px;
+      top: 100%;
+      overflow-y: auto;
+    }
+
+    .autocomplete-item {
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .autocomplete-item:hover {
+      background: #eee;
+    }
+
+    .comparison-wrapper {
+      display: flex;
+      overflow-x: auto;
+      margin-top: 30px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .feature-column {
+      min-width: 160px;
+      border-right: 1px solid #ddd;
+      background: #f4f4f4;
+    }
+
+    .company-column {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .column-header {
+      position: relative;
+      text-align: center;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      background: #fafafa;
+    }
+
+    .cell {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      text-align: center;
+    }
+
+    .feature-cell {
+      text-align: left;
+      font-weight: bold;
+    }
+
+    .price-label {
+      font-size: 13px;
+      color: #444;
+      text-align: center;
+      margin-top: 5px;
+    }
+
+    /* Show data-title labels in smaller screen widths */
+@media (max-width: 768px) {
+  .cell {
+    position: relative;
+  }
+
+  .cell[data-title]:before {
+    content: attr(data-title);
+    font-weight: bold;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #f4f4f4;
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+    font-size: 12px;
+  }
+
+  /* Optional: Adjust column spacing for mobile */
+  .comparison-wrapper {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .company-column, .feature-column {
+    display: block;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+}
+
+.loader {
+  border: 3px solid #eee;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+  </style>
+</head>
+<body>
+
+<h2>Privacy Bee License Comparison</h2>
+
+<div class="control-panel">
+  <!-- Privacy Bee (fixed) -->
+  <div class="privacybee">
+    <div class="company-select-box">
+      <div class="circle-box">
+        <img src="https://pub-e63b17b4d990438a83af58c15949f8a2.r2.dev/mark/amara.png" class="logo" />
+      </div>
+      <div class="competitor-label">Privacy Bee</div>
+    </div>
+    <select data-company="Privacy Bee" class="license-select">
+      <option value="Basic">Basic</option>
+      <option value="Standard">Standard</option>
+      <option value="Premium">Premium</option>
+    </select>
+    <div class="price-label" id="price-0"></div>
+  </div>
+
+  <!-- Competitor inputs -->
+  <div id="hidden-selectors" style="display: none;">
+    <div class="competitor"></div>
+    <div class="competitor"></div>
+    <div class="competitor"></div>
+  </div>
+</div>
+
+<!-- Comparison Table -->
+<div class="comparison-wrapper" id="comparisonWrapper"></div>
+
+<script>
+const data = {
+  tooltips: {
+    "Encryption": "Encrypts data both in transit and at rest to protect against unauthorized access.",
+    "User Management": "Allows administrators to add, remove, and manage user roles and access levels.",
+    "GDPR": "Ensures compliance with the EU's General Data Protection Regulation for handling personal data.",
+    "CCPA": "Supports features needed to comply with the California Consumer Privacy Act.",
+    "Breach Alerts": "Notifies you immediately if any security breaches are detected.",
+    "2FA": "Adds an extra layer of login security through two-factor authentication.",
+    "Support": "Access to technical or customer service support channels.",
+    "Reports": "Provides reports and analytics on data access, usage, and performance.",
+    "Custom Branding": "Customize the look and feel of the platform to match your brand identity.",
+    "Audit Logs": "Tracks and records user activity and system changes for security and compliance."
+  },
+  companies: {
+    "Privacy Bee": {
+      logo: "https://pub-e63b17b4d990438a83af58c15949f8a2.r2.dev/mark/amara.png",
+      "Basic": {
+        price: "$9/mo",
+        Encryption: true,
+        "User Management": false,
+        GDPR: true,
+        CCPA: false,
+        "Breach Alerts": false,
+        "2FA": false,
+        Support: false,
+        Reports: false,
+        "Custom Branding": false,
+        "Audit Logs": false
+      },
+      "Standard": {
+        price: "$19/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: true,
+        "Breach Alerts": true,
+        "2FA": true,
+        Support: true,
+        Reports: false,
+        "Custom Branding": false,
+        "Audit Logs": false
+      },
+      "Premium": {
+        price: "$29/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: true,
+        "Breach Alerts": true,
+        "2FA": true,
+        Support: true,
+        Reports: true,
+        "Custom Branding": true,
+        "Audit Logs": true
+      }
+    },
+    "Competitor One": {
+      logo: "https://pub-e63b17b4d990438a83af58c15949f8a2.r2.dev/mark/asgardia.png",
+      "Basic": {
+        price: "$8/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: false,
+        "Breach Alerts": false,
+        "2FA": false,
+        Support: false,
+        Reports: false,
+        "Custom Branding": false,
+        "Audit Logs": false
+      },
+      "Standard": {
+        price: "$18/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: true,
+        "Breach Alerts": true,
+        "2FA": true,
+        Support: true,
+        Reports: false,
+        "Custom Branding": false,
+        "Audit Logs": false
+      },
+      "Premium": {
+        price: "$28/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: true,
+        "Breach Alerts": true,
+        "2FA": true,
+        Support: true,
+        Reports: true,
+        "Custom Branding": true,
+        "Audit Logs": true
+      }
+    },
+    "Competitor Two": {
+      logo: "https://pub-e63b17b4d990438a83af58c15949f8a2.r2.dev/mark/aven.png",
+      "Free": {
+        price: "Free",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: false,
+        "Breach Alerts": false,
+        "2FA": false,
+        Support: false,
+        Reports: false,
+        "Custom Branding": false,
+        "Audit Logs": false
+      },
+      "Pro": {
+        price: "$24/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: true,
+        "Breach Alerts": true,
+        "2FA": true,
+        Support: true,
+        Reports: true,
+        "Custom Branding": true,
+        "Audit Logs": true
+      }
+    },
+    "Competitor Three": {
+      logo: "https://pub-e63b17b4d990438a83af58c15949f8a2.r2.dev/mark/kanba.png",
+      "Lite": {
+        price: "$5/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: false,
+        CCPA: false,
+        "Breach Alerts": false,
+        "2FA": false,
+        Support: false,
+        Reports: false,
+        "Custom Branding": false,
+        "Audit Logs": false
+      },
+      "Enterprise": {
+        price: "$35/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: true,
+        "Breach Alerts": true,
+        "2FA": true,
+        Support: true,
+        Reports: true,
+        "Custom Branding": true,
+        "Audit Logs": true
+      }
+    },
+    "Competitor Four": {
+      logo: "https://pub-e63b17b4d990438a83af58c15949f8a2.r2.dev/mark/liva.png",
+      "Basic": {
+        price: "$10/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: false,
+        "Breach Alerts": true,
+        "2FA": false,
+        Support: false,
+        Reports: false,
+        "Custom Branding": false,
+        "Audit Logs": false
+      },
+      "Standard": {
+        price: "$20/mo",
+        Encryption: true,
+        "User Management": false,
+        GDPR: true,
+        CCPA: true,
+        "Breach Alerts": false,
+        "2FA": true,
+        Support: true,
+        Reports: false,
+        "Custom Branding": false,
+        "Audit Logs": false
+      },
+      "Premium": {
+        price: "$30/mo",
+        Encryption: true,
+        "User Management": true,
+        GDPR: true,
+        CCPA: true,
+        "Breach Alerts": true,
+        "2FA": true,
+        Support: true,
+        Reports: true,
+        "Custom Branding": true,
+        "Audit Logs": true
+      }
+    }
+  }
+};
+
+
+const featureDescriptions = data.tooltips;
+const companies = data.companies;
+
+const ICONS = {
+  check: `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 10L9 13L15 7" stroke="#28a745" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  cross: `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 6L14 14M14 6L6 14" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  dash: `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="5" y1="10" x2="15" y2="10" stroke="#6c757d" stroke-width="2" stroke-linecap="round"/>
+  </svg>`
+};
+
+const features = Object.keys(companies["Privacy Bee"]["Basic"]).filter(f => f !== "price");
+const competitorSlots = document.querySelectorAll('.competitor');
+
+competitorSlots.forEach((slot, i) => {
+  slot.appendChild(createAutocompleteInput(i));
+});
+
+function createAutocompleteInput(index) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "company-select-box";
+
+  const circleBox = document.createElement("div");
+  circleBox.className = "circle-box";
+  wrapper.appendChild(circleBox);
+
+  const label = document.createElement("div");
+  label.className = "competitor-label";
+  label.textContent = "Select Competitor";
+  wrapper.appendChild(label);
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Search competitor...";
+  const list = document.createElement("div");
+  list.className = "autocomplete-list";
+  wrapper.appendChild(input);
+  wrapper.appendChild(list);
+
+  let debounceTimeout;
+
+  input.addEventListener("input", () => {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+      list.innerHTML = "";
+      const query = input.value.trim().toLowerCase();
+      if (query.length < 3) return;
+
+      const selectedCompetitors = [...document.querySelectorAll('.competitor-label')].map(el => el.textContent.trim());
+
+      Object.keys(companies).forEach(company => {
+        if (
+          company !== "Privacy Bee" &&
+          company.toLowerCase().includes(query) &&
+          !selectedCompetitors.includes(company)
+        ) {
+          const item = document.createElement("div");
+          item.className = "autocomplete-item";
+          item.innerHTML = `<img src="${companies[company].logo}" class="logo" /> ${company}`;
+          item.addEventListener("click", () => {
+            selectCompetitor(company, index);
+          });
+          list.appendChild(item);
+        }
+      });
+    }, 250);
+  });
+
+  // Close autocomplete when clicking outside
+document.addEventListener("click", function handleClickOutside(event) {
+  if (!wrapper.contains(event.target)) {
+    list.innerHTML = "";
+  }
+});
+
+// Close autocomplete on Escape key
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    list.innerHTML = "";
+    input.blur();
+  }
+});
+
+  return wrapper;
+}
+
+function selectCompetitor(name, index, licenseToSelect = null) {
+  const slot = competitorSlots[index];
+
+  slot.innerHTML = `
+    <div class="company-select-box">
+      <div class="circle-box">
+        <span class="loader"></span>
+      </div>
+      <label class="competitor-label">${name}</label>
+    </div>
+  `;
+
+  setTimeout(() => {
+    const company = companies[name];
+    const licenses = Object.keys(company).filter(k => k !== "logo");
+
+    slot.innerHTML = `
+      <div class="company-select-box">
+        <div class="circle-box"><img src="${company.logo}" class="logo" /></div>
+        <label class="competitor-label">${name}</label>
+        <button class="clear-button" data-index="${index}" style="margin-top: 5px; font-size: 12px; padding: 4px 8px;">✖ Clear</button>
+      </div>
+      <select class="license-select" data-company="${name}" data-index="${index + 1}">
+        ${licenses.map(lic => `<option value="${lic}">${lic}</option>`).join("")}
+      </select>
+      <div class="price-label" id="price-${index + 1}"></div>
+    `;
+
+    const select = slot.querySelector("select");
+    const priceLabel = slot.querySelector(".price-label");
+
+    // 🔧 Preselect license if passed
+    if (licenseToSelect && licenses.includes(licenseToSelect)) {
+      select.value = licenseToSelect;
+    }
+
+    select.addEventListener("change", () => {
+      const selectedLicense = select.value;
+      const licenseData = company[selectedLicense];
+      priceLabel.textContent = `Price: ${licenseData.price || "—"}`;
+      requestAnimationFrame(() => renderGrid());
+      updateURLWithSelectedCompetitors();
+    });
+
+    slot.querySelector(".clear-button").addEventListener("click", () => {
+      slot.innerHTML = "";
+      slot.appendChild(createAutocompleteInput(index));
+      requestAnimationFrame(() => renderGrid());
+      updateURLWithSelectedCompetitors();
+    });
+
+    // Trigger change after selection
+    select.dispatchEvent(new Event("change"));
+  }, 1000);
+}
+
+
+
+let lastURL = "";
+
+function updateURLWithSelectedCompetitors() {
+  const selected = [];
+
+  competitorSlots.forEach((slot) => {
+    const label = slot.querySelector('.competitor-label');
+    const select = slot.querySelector('select.license-select');
+    if (label && select) {
+      const name = label.textContent.trim().replace(/\s+/g, "");
+      const license = select.value.trim();
+      selected.push(`${name}:${license}`);
+    }
+  });
+
+  let newURL = window.location.origin + window.location.pathname;
+  if (selected.length > 0) {
+    newURL += `?vs=${selected.join(",")}`;
+  }
+
+  if (newURL !== lastURL) {
+    window.history.replaceState({}, "", newURL);
+    lastURL = newURL;
+  }
+}
+
+
+function renderGrid() {
+  const container = document.getElementById("comparisonWrapper");
+  container.innerHTML = "";
+
+  const featureCol = document.createElement("div");
+  featureCol.className = "feature-column";
+  featureCol.innerHTML = `<div class="column-header">Feature</div>`;
+  features.forEach(feature => {
+    const tooltip = featureDescriptions[feature] || "";
+    featureCol.innerHTML += `
+      <div class="cell feature-cell" data-title="${feature}">
+        ${feature}
+        <span title="${tooltip}" style="cursor: help; margin-left: 6px; color: #888;">&#9432;</span>
+      </div>`;
+  });
+  featureCol.innerHTML += `<div class="cell feature-cell" data-title="Price">Price</div>`;
+  container.appendChild(featureCol);
+
+  const columns = ["Privacy Bee", ...Array.from(competitorSlots).map(slot => {
+    const select = slot.querySelector("select.license-select");
+    return select?.dataset.company || null;
+  })];
+
+  columns.forEach((companyName, colIndex) => {
+    const col = document.createElement("div");
+    col.className = "company-column";
+
+    let html = `<div class="column-header">`;
+    if (companyName === "Privacy Bee") {
+      html += companyName;
+    } else {
+      const index = colIndex - 1;
+      const slot = competitorSlots[index];
+      if (slot) {
+        html += `<div class="selector-placeholder" data-index="${index}"></div>`;
+      } else {
+        html += companyName || "—";
+      }
+    }
+    html += `</div>`;
+
+    let select;
+    if (companyName === "Privacy Bee") {
+      select = document.querySelector(`select[data-company="Privacy Bee"]`);
+    } else {
+      const index = colIndex - 1;
+      const slot = competitorSlots[index];
+      select = slot?.querySelector("select.license-select");
+    }
+
+    const license = select?.value;
+    const featureData = companies[companyName]?.[license] || {};
+    const price = featureData?.price || "—";
+
+    features.forEach(f => {
+  const val = featureData[f];
+  let content;
+
+  if (val === true) {
+    content = `<span class="feature-value boolean-true">${ICONS.check}</span>`;
+  } else if (val === false) {
+    content = `<span class="feature-value boolean-false">${ICONS.cross}</span>`;
+  } else if (val !== undefined && val !== null) {
+    content = `<span class="feature-value value-text">${val}</span>`;
+  } else {
+    content = `<span class="feature-value value-missing">${ICONS.dash}</span>`;
+  }
+
+  html += `<div class="cell" data-title="${f}">${content}</div>`;
+});
+
+
+    html += `<div class="cell" data-title="Price"><strong>${price}</strong></div>`;
+
+    col.innerHTML = html;
+    container.appendChild(col);
+
+    const placeholder = col.querySelector('.selector-placeholder');
+    if (placeholder) {
+      const index = parseInt(placeholder.getAttribute("data-index"));
+      const sourceSlot = competitorSlots[index];
+      const selectorBox = sourceSlot.querySelector(".company-select-box")?.parentElement;
+      if (selectorBox) {
+        placeholder.replaceWith(selectorBox);
+        selectorBox.style.display = 'block';
+      }
+    }
+  });
+}
+
+const pbSelect = document.querySelector('select[data-company="Privacy Bee"]');
+pbSelect.addEventListener("change", () => {
+  const license = pbSelect.value;
+  document.getElementById("price-0").textContent = `Price: ${companies["Privacy Bee"][license]?.price || "—"}`;
+  requestAnimationFrame(() => renderGrid());
+});
+pbSelect.dispatchEvent(new Event("change"));
+
+window.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(window.location.search);
+  const competitorsFromURL = params.get("vs")?.split(",") || [];
+  let loadCount = 0;
+
+  competitorsFromURL.forEach((item, i) => {
+    const [namePart, licensePart] = item.split(":");
+    const realName = Object.keys(companies).find(
+      c => c.replace(/\s+/g, "").toLowerCase() === namePart.toLowerCase()
+    );
+    if (realName && loadCount < competitorSlots.length) {
+      selectCompetitor(realName, loadCount, licensePart); // ✅ now passes license
+      loadCount++;
+    }
+  });
+
+  renderGrid();
+});
+
+
+</script>
+</body>
+</html>
